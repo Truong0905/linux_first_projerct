@@ -2,8 +2,6 @@
  * Includes
  ******************************************************************************/
 
-#include<linux/module.h> /* for every modules */
-#include<linux/platform_device.h>
 #include "pcd_platform.h"
 /*******************************************************************************
  * Definitions

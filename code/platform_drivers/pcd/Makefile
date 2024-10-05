@@ -9,7 +9,7 @@ HOST_KER_DIR := /lib/modules/$(shell uname -r)/build/
 
 PROJECT_DIR := $(shell pwd )
 
-obj-m := $(MODULE_NAME).o
+obj-m := $(foreach Mod, $(MODULE_NAME), $(Mod).o)
 
 #.PHONY:pre_Build
 #pre_Build:i

@@ -2,27 +2,6 @@
  * Includes
  ******************************************************************************/
 
-#include<linux/module.h> /* for every modules */
-
-#include <linux/init.h>
-
-#include <linux/kernel.h>
-
-#include <linux/fs.h> /* for alloc_chrdev_region function */
-
-#include<linux/cdev.h> /* for cdev_init function */
-
-#include <linux/device.h>
-
-#include <linux/kdev_t.h>
-
-#include<linux/uaccess.h>
-
-#include<linux/err.h>
-
-#include<linux/platform_device.h>
-#include<linux/slab.h> /* Kmalloc and Kfree */
-
 #include "pcd_platform.h"
 
 /*******************************************************************************
