@@ -21,7 +21,7 @@ void pcdev_release(struct device *dev);
 struct pcdev_platform_data pcdev_data[MAX_DEVICES] =
 {
     [0] = {.size = 512, .perm = READ_WRITE, .serial_number = "PCDEV1"},
-    [1] = {.size = 512, .perm = READ_WRITE, .serial_number = "PCDEV1"},
+    [1] = {.size = 512, .perm = READ_WRITE, .serial_number = "PCDEV2"},
 };
 
 /* Create 2 platform devices  */
