@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "kernel.h": "c",
+        "fs.h": "c",
+        "module.h": "c"
+    }
+}

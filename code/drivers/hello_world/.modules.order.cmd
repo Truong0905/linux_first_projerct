@@ -1,0 +1,1 @@
+cmd_/home/truonglv/BBB/code/drivers/hello_world/modules.order := {   echo /home/truonglv/BBB/code/drivers/hello_world/hello_world.ko; :; } | awk '!x[$$0]++' - > /home/truonglv/BBB/code/drivers/hello_world/modules.order
