@@ -323,7 +323,7 @@ ssize_t pcd_read (struct file * filp, char __user *buff, size_t count, loff_t * 
     }
 
    /* Copy to user */
-   if ( copy_to_user(buff, &(pcdev->buffer[*f_pos]), count))
+   if ( !copy_to_user(buff, &(pcdev->buffer[*f_pos]), count))
     {
         return -EFAULT;
     }
@@ -358,7 +358,7 @@ ssize_t pcd_write (struct file *filp, const char __user *buff, size_t count, lof
         return -ENOMEM;
 
     /* Copy from user */
-   if ( copy_from_user(&(pcdev->buffer[*f_pos]),buff ,count))
+   if ( !copy_from_user(&(pcdev->buffer[*f_pos]),buff ,count))
     {
         return -EFAULT;
     }

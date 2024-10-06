@@ -193,8 +193,7 @@ ssize_t pcd_read (struct file * filp, char __user *buff, size_t count, loff_t * 
 
    pr_info(" Read requested for %zu bytes \n", count);
 
-   pr_info(" Current file position = %lld\n", *f_pos);    
-  
+   pr_info(" Current file position = %lld\n", *f_pos);
    /* Adjust  the 'count' */
    if ((*f_pos + count) > max_size)
     {
@@ -204,6 +203,7 @@ ssize_t pcd_read (struct file * filp, char __user *buff, size_t count, loff_t * 
    /* Copy to user */
    if ( copy_to_user(buff, &(pcdev->buffer[*f_pos]), count))
     {
+        pr_err(" copy_to_user failed \n");
         return -EFAULT;
     }
 
@@ -227,18 +227,22 @@ ssize_t pcd_write (struct file *filp, const char __user *buff, size_t count, lof
 
     pr_info(" Write requested for %zu bytes \n", count);
 
-    pr_info(" Current file position = %lld\n", *f_pos);    
+    pr_info(" Current file position = %lld\n", *f_pos);
   
     /* Adjust 'count' */
     if ((*f_pos + count) > max_size)
         count = max_size - *f_pos;
   
     if(!count)
+    {
+        pr_err(" No Memory \n");
         return -ENOMEM;
+    }
 
     /* Copy from user */
    if ( copy_from_user(&(pcdev->buffer[*f_pos]),buff ,count))
     {
+        pr_err(" copy_from_user failed \n");
         return -EFAULT;
     }
 
@@ -254,6 +258,7 @@ ssize_t pcd_write (struct file *filp, const char __user *buff, size_t count, lof
 
     return count;
 }
+
 
 int pcd_open (struct inode * inode, struct file * filp)
 {
