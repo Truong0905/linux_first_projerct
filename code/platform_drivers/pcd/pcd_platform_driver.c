@@ -7,15 +7,15 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-struct tem_cfg
+struct device_cfg_type
 {
     int cfg_0;
     int cfg_1;
 };
 
-enum temp_enum{
-    VER_1 =0,
-    VER_2 =1,
+enum device_version_t{
+    T_VER_1 =0,
+    T_VER_2 =1,
 };
 
 
@@ -34,19 +34,11 @@ int pcd_platform_driver_remove(struct platform_device *pdev);
 
 
 static int check_permission(int perm, int acc_mode);
-static int __init pcd_platform_driver_init (void);
-static void __exit pcd_platform_driver_exit(void);
 
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
-struct pcdrv_private_data  pcdrv_data =
-{
-    .total_devices = 0,
-};
-
-
 /**
  * Initialize file ops structure with driver's system call implementation methods
  *
@@ -61,44 +53,49 @@ struct file_operations g_fops =
     .owner = THIS_MODULE,
 };
 
-struct tem_cfg cfg_temp_array[2] =
+
+struct pcdrv_private_data pcdrv_data =
 {
-    [VER_1] = {.cfg_0 = 1, .cfg_1 = 2},
-    [VER_2] = {.cfg_0 = 3, .cfg_1 = 4}
+    .total_devices = 0,
+};
+
+struct device_cfg_type device_cfg_array[2] =
+{
+    [T_VER_1] = {.cfg_0 = 1, .cfg_1 = 2},
+    [T_VER_2] = {.cfg_0 = 3, .cfg_1 = 4}
 };
 
 struct platform_device_id pcdevs_id[DEVICE_VERSION_NUM] =
 {
     [0] = {
         .name = DEVICE_NAME_DETECTED_1,
-        .driver_data = VER_1 , /* [VER_2] = {.cfg_0 = 1, .cfg_1 = 2}, */
+        .driver_data = T_VER_1 , /* [T_VER_2] = {.cfg_0 = 1, .cfg_1 = 2}, */
     },
     [1] = {
         .name = DEVICE_NAME_DETECTED_2,
-        .driver_data = VER_2 , /* [VER_2] = {.cfg_0 = 3, .cfg_1 = 4}, */
+        .driver_data = T_VER_2 , /* [T_VER_2] = {.cfg_0 = 3, .cfg_1 = 4}, */
     }
 };
+
 struct platform_driver pcd_platform_driver =
 {
     .probe      = pcd_platform_driver_prove,
     .remove     = pcd_platform_driver_remove,
     .id_table   = pcdevs_id,
+    .driver = {
+		.name = "pseudo-char-device"
+	}
 };
 
 /*******************************************************************************
  * Static Function
  ******************************************************************************/
-module_init(pcd_platform_driver_init);
-module_exit(pcd_platform_driver_exit);
-MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Truong Le Van");
-MODULE_DESCRIPTION("PCD platform driver");
-MODULE_VERSION("1.0");
 
 static int __init pcd_platform_driver_init (void)
 {
-        int status = 0 ;
+    int status = 0 ;
 
+    pr_info("Call alloc_chrdev_region \n");
     /* 1. Dynamically allocate a device number for MAX_DEVICES */
     status = alloc_chrdev_region( &pcdrv_data.device_base_num, 0, MAX_DEVICES, DEVICE_NAME);
     if (status < 0)
@@ -106,6 +103,8 @@ static int __init pcd_platform_driver_init (void)
         pr_err("alloc chrdev failed \n");
         goto erro_tag;
     }
+
+    pr_info("Call class_create \n");
     /* 2 Create device class under /sys/class/ */
     pcdrv_data.class = class_create(THIS_MODULE, CLASS_FILE_NAME);
     if(IS_ERR(pcdrv_data.class))
@@ -115,14 +114,20 @@ static int __init pcd_platform_driver_init (void)
         goto unregister_chrdev_region_tag;
     }
 
-
-   platform_driver_register(&pcd_platform_driver);
+    pr_info("Call platform_driver_register \n");
+   status = platform_driver_register(&pcd_platform_driver);
+   if (status)
+   {
+        pr_err("platform_driver_register failed \n");
+        goto class_destroy_tag;
+   }
 
    pr_info("Platform driver loaded \n");
 
    return 0;
 
-
+class_destroy_tag:
+    class_destroy(pcdrv_data.class);
 unregister_chrdev_region_tag:
     unregister_chrdev_region(pcdrv_data.device_base_num, MAX_DEVICES);
 erro_tag:
@@ -141,6 +146,14 @@ static void __exit pcd_platform_driver_exit(void)
 
    pr_info("Platform driver unloaded \n");
 }
+
+module_init(pcd_platform_driver_init);
+module_exit(pcd_platform_driver_exit);
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Truong Le Van");
+MODULE_DESCRIPTION("PCD platform driver");
+MODULE_VERSION("1.0");
+
 
 static int check_permission(int perm, int acc_mode)
 {
@@ -161,8 +174,6 @@ static int check_permission(int perm, int acc_mode)
 
     return -EPERM;
 }
-
-
 
 
 /*******************************************************************************
@@ -242,7 +253,7 @@ ssize_t pcd_read (struct file * filp, char __user *buff, size_t count, loff_t * 
    pr_info(" Updated file position  =  %lld \n", *f_pos);
 
     /* Return number of bytes  which have been successully read */
-    
+
     return count;
 }
 
@@ -357,12 +368,12 @@ int pcd_platform_driver_prove(struct platform_device *pdev)
     pr_info( " pdev_data->pData.perm = %d \n", pdev_data->pData.perm);
     pr_info( "pdev_data->pData.serial_number = %s \n", pdev_data->pData.serial_number);
 
-    pr_info (" cfg_0 = %d \n ",cfg_temp_array[pdev->id_entry->driver_data].cfg_0);
-    pr_info (" cfg_1 = %d \n ",cfg_temp_array[pdev->id_entry->driver_data].cfg_1);
+    pr_info (" cfg_0 = %d\n",device_cfg_array[pdev->id_entry->driver_data].cfg_0);
+    pr_info (" cfg_1 = %d\n",device_cfg_array[pdev->id_entry->driver_data].cfg_1);
 
     /* 3. Dynamically allowcate memory for the device buffer uisng size information
             from platform data */
-    pdev_data->buffer = devm_kzalloc(&pdev->dev, sizeof(pdev_data->pData.size), GFP_KERNEL );
+    pdev_data->buffer = devm_kzalloc(&pdev->dev, pdev_data->pData.size, GFP_KERNEL );
     if(!pdev_data->buffer)
     {
         pr_err("Cannot allowcate memory for buffer \n");
