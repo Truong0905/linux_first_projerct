@@ -27,7 +27,7 @@ struct pcdev_platform_data pcdev_data[MAX_DEVICES] =
 /* Create 2 platform devices  */
 struct platform_device platform_pcdev_1 =
 {
-    .name   = DEVICE_NAME_DETECTED,
+    .name   = DEVICE_NAME_DETECTED_1,
     .id     = 0,
     .dev    = {
                 .platform_data = (void *)&pcdev_data[0],
@@ -37,7 +37,7 @@ struct platform_device platform_pcdev_1 =
 
 struct platform_device platform_pcdev_2 =
 {
-    .name   = DEVICE_NAME_DETECTED,
+    .name   = DEVICE_NAME_DETECTED_2,
     .id     = 1,
     .dev    = {
                 .platform_data = (void *)&pcdev_data[1],

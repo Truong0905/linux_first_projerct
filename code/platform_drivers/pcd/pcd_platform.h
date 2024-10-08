@@ -25,6 +25,8 @@
 
 #include<linux/slab.h> /* Kmalloc and Kfree */
 
+#include<linux/mod_devicetable.h>
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
@@ -34,8 +36,10 @@
 #endif /* pr_fmt */
 
 #define MAX_DEVICES  5
+#define DEVICE_VERSION_NUM 2
+#define DEVICE_NAME_DETECTED_1 "pcd1\0"
+#define DEVICE_NAME_DETECTED_2 "pcd2\0"
 
-#define DEVICE_NAME_DETECTED "pseudo-char-device"
 #define DEVICE_NAME "pseudo device"
 #define CLASS_FILE_NAME "class_pcd"
 

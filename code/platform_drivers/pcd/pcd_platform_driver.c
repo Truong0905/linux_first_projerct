@@ -7,6 +7,17 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+struct tem_cfg
+{
+    int cfg_0;
+    int cfg_1;
+};
+
+enum temp_enum{
+    VER_1 =0,
+    VER_2 =1,
+};
+
 
 
 /*******************************************************************************
@@ -50,13 +61,28 @@ struct file_operations g_fops =
     .owner = THIS_MODULE,
 };
 
+struct tem_cfg cfg_temp_array[2] =
+{
+    [VER_1] = {.cfg_0 = 1, .cfg_1 = 2},
+    [VER_2] = {.cfg_0 = 3, .cfg_1 = 4}
+};
+
+struct platform_device_id pcdevs_id[DEVICE_VERSION_NUM] =
+{
+    [0] = {
+        .name = DEVICE_NAME_DETECTED_1,
+        .driver_data = VER_1 , /* [VER_2] = {.cfg_0 = 1, .cfg_1 = 2}, */
+    },
+    [1] = {
+        .name = DEVICE_NAME_DETECTED_2,
+        .driver_data = VER_2 , /* [VER_2] = {.cfg_0 = 3, .cfg_1 = 4}, */
+    }
+};
 struct platform_driver pcd_platform_driver =
 {
     .probe      = pcd_platform_driver_prove,
     .remove     = pcd_platform_driver_remove,
-    .driver     = {
-                    .name = DEVICE_NAME_DETECTED,
-                  }
+    .id_table   = pcdevs_id,
 };
 
 /*******************************************************************************
@@ -308,16 +334,16 @@ int pcd_platform_driver_prove(struct platform_device *pdev)
     {
         pr_err("Get platform data failed \n");
         status = -EINVAL;
-        goto out;
+        return status;
     }
 
     /* 2. Dynamically allowcate memory for device private data*/
-    pdev_data = kzalloc(sizeof(struct pcdev_private_data), GFP_KERNEL );
+    pdev_data = devm_kzalloc(&pdev->dev,sizeof(struct pcdev_private_data), GFP_KERNEL );
     if(!pdev_data)
     {
         pr_err("Cannot allowcate memory for pdev_data \n");
         status = -ENOMEM;
-        goto out;
+        return status;
     }
 
     /* save private data pointer in platform device structure */
@@ -331,14 +357,17 @@ int pcd_platform_driver_prove(struct platform_device *pdev)
     pr_info( " pdev_data->pData.perm = %d \n", pdev_data->pData.perm);
     pr_info( "pdev_data->pData.serial_number = %s \n", pdev_data->pData.serial_number);
 
+    pr_info (" cfg_0 = %d \n ",cfg_temp_array[pdev->id_entry->driver_data].cfg_0);
+    pr_info (" cfg_1 = %d \n ",cfg_temp_array[pdev->id_entry->driver_data].cfg_1);
+
     /* 3. Dynamically allowcate memory for the device buffer uisng size information
             from platform data */
-    pdev_data->buffer = kzalloc(sizeof(pdev_data->pData.size), GFP_KERNEL );
+    pdev_data->buffer = devm_kzalloc(&pdev->dev, sizeof(pdev_data->pData.size), GFP_KERNEL );
     if(!pdev_data->buffer)
     {
         pr_err("Cannot allowcate memory for buffer \n");
         status = -ENOMEM;
-        goto dev_data_free;
+        return status;
     }
     /* 4. Get device number*/
     pdev_data->dev_number = pcdrv_data.device_base_num + pdev->id;
@@ -350,7 +379,7 @@ int pcd_platform_driver_prove(struct platform_device *pdev)
     if (status < 0)
     {
         pr_err("cdev_add failed \n");
-        goto buffer_free;
+        return status;
     }
     pdev_data->cdev.owner = THIS_MODULE;
     /* 6. Create device file for the deteted platform device */
@@ -359,25 +388,18 @@ int pcd_platform_driver_prove(struct platform_device *pdev)
     if(IS_ERR(pcdrv_data.device))
     {
         pr_err("Device create failed \n");
+
         status = PTR_ERR(pcdrv_data.device);
-        goto cdev_del;
+
+        cdev_del(&pdev_data->cdev);
+
+        return status;
     }
 
     pcdrv_data.total_devices++;
     pr_info( "The probe was succesfull\n");
 
     return 0;
-
-/* 7. error handling */
-cdev_del:
-    cdev_del(&pdev_data->cdev);
-buffer_free:
-    kfree(pdev_data->buffer);
-dev_data_free:
-    kfree(pdev_data);
-out:
-    return status;
-
 }
 
 /* Gets called when the device is removed from the system */
@@ -391,10 +413,6 @@ int pcd_platform_driver_remove(struct platform_device *pdev)
 
     /* 2. Remove a cdev entry from the system */
     cdev_del(&pdev_data->cdev);
-
-    /* 3. Free memory held by the device */
-    kfree(pdev_data->buffer);
-    kfree(pdev_data);
 
     pcdrv_data.total_devices--;
     pr_info( "A device is removed \n");
